@@ -1,0 +1,67 @@
+name: DEPLOY
+on:
+  workflow_dispatch:
+    inputs:
+      Environment:
+        description: 'Choose Environment to Deploy [dev, poc, fi-test].'
+        required: true
+        default: 'dev'
+
+# Triggers the workflow on push or pull request events but only for the main branch
+#  push:
+#    branches: [feature/**]
+#  pull_request:
+#    branches: [feature/**]
+
+jobs:
+  docit:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@master
+
+      - name: Import environment variables
+        id: import-env
+        shell: bash
+        run: |
+          mkdir tmp
+          cat ./envvars/global.env ./envvars/${{ github.event.inputs.Environment }}.env | grep -v "^#" | sed '/^[[:space:]]*$/d'> tmp/.env
+          while read line; do
+            echo "$line" >> $GITHUB_ENV
+          done < tmp/.env
+
+      - name: Setup gcloud CLI
+        uses: google-github-actions/setup-gcloud@v0
+        with:
+          service_account_key: ${{ secrets[env.secretKeyForCIID] }}
+          project_id: "${{env.projectId}}"
+          export_default_credentials: true
+
+      - name: 'get-gke-credentials'
+        uses: 'google-github-actions/get-gke-credentials@v1'
+        with:
+         project_id: "${{env.projectId}}"
+         cluster_name: "${{ env.gkeClusterName }}"
+         location: "europe-west3"
+
+      - name: 'kubectl'
+        run: |-
+         kubectl get ns
+
+      - name: 'Gcloud'
+        run: |-
+         gcloud components install gke-gcloud-auth-plugin
+         export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+         gcloud container clusters get-credentials ncr-helm-gke --region europe-west3 --project ${{ env.projectId }}
+         gcloud iam service-accounts add-iam-policy-binding ${{ env.GSA_NAME }}@${{ env.projectId }}.iam.gserviceaccount.com --role roles/iam.workloadIdentityUser --member "serviceAccount:${{ env.projectId }}.svc.id.goog[${{ env.K_NAMESPACE }}/${{ env.KSA_NAME }}]"
+         
+
+      - name: 'create clusterrole binding'
+        run: |-
+         kubectl create namespace ${{ env.K_NAMESPACE }} 
+         kubectl create serviceaccount ${{ env.KSA_NAME }} -n ${{ env.K_NAMESPACE }}
+         kubectl annotate serviceaccount ${{ env.KSA_NAME }} --namespace ${{ env.K_NAMESPACE }} iam.gke.io/gcp-service-account=${{env.GSA_NAME}}@${{env.projectId}}.iam.gserviceaccount.com  
+         kubectl create clusterrolebinding dev-admin --clusterrole cluster-admin --serviceaccount=${{ env.ENV_DEFAULT_NAMESPACE }}:default --namespace=${{ env.K_NAMESPACE }}
+         
+         
