@@ -43,7 +43,7 @@ jobs:
         with:
          project_id: "${{env.projectId}}"
          cluster_name: "${{ env.gkeClusterName }}"
-         location: "us-west2"
+         location: "europe-west3"
 
       - name: 'kubectl'
         run: |-
