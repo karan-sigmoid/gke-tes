@@ -55,10 +55,8 @@ jobs:
          export USE_GKE_GCLOUD_AUTH_PLUGIN=True
 
          gcloud container clusters get-credentials ncr-helm-gke --region europe-west3 --project ncr-sandbox-project
-         gcloud iam service-accounts add-iam-policy-binding ${{env.GSA_NAME}}@${{env.projectId}}.iam.gserviceaccount.com \
-         --role roles/iam.workloadIdentityUser \ 
-         --member "serviceAccount:${{env.projectId}}.svc.id.goog[${{ env.K_NAMESPACE }}/${{ env.KSA_NAME }}]"
-
+         gcloud iam service-accounts add-iam-policy-binding ${{ env.GSA_NAME }}@${{ env.projectId }}.iam.gserviceaccount.com --role roles/iam.workloadIdentityUser --member "serviceAccount:${{ env.projectId }}.svc.id.goog[${{ env.K_NAMESPACE }}/${{ env.KSA_NAME }}]"
+         
 
       - name: 'kubectl2'
         run: |-
