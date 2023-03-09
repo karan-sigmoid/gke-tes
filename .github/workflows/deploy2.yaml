@@ -60,8 +60,9 @@ jobs:
 
       - name: 'kubectl2'
         run: |-
-         
+        
+         kubectl create serviceaccount ${{ env.KSA_NAME }}
          kubectl annotate serviceaccount ${{ env.KSA_NAME }} --namespace ${{ env.K_NAMESPACE }} iam.gke.io/gcp-service-account=${{env.GSA_NAME}}@${{env.projectId}}.iam.gserviceaccount.com  
          kubectl create clusterrolebinding dev-admin --clusterrole cluster-admin --serviceaccount=${{ env.ENV_DEFAULT_NAMESPACE }}:default --namespace=${{ env.K_NAMESPACE }}
-         ubectl create serviceaccount ${{ env.KSA_NAME }}
-         kubectl get ns
+         
+         
