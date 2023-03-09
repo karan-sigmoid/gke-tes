@@ -48,3 +48,8 @@ jobs:
       - name: 'kubectl'
         run: |-
          kubectl get ns
+
+      - name: 'Gcloud'
+        run: |-
+         gcloud container clusters get-credentials ncr-helm-gke --region europe-west3 --project ncr-sandbox-project
+         kubectl get ns
